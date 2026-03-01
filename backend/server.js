@@ -39,6 +39,10 @@ app.use('/api/chat', chatRoutes);
 app.use('/api/tasks', taskRoutes);
 
 // Shared Analytics & Health Check
+app.get('/', (req, res) => {
+  res.json({ message: 'CarePassport API is running!', docs: '/api/health' });
+});
+
 app.get('/api/health', (req, res) => {
   res.json({ status: 'Healthy', version: '2.0.0', network: 'Simulated Sui/Walrus' });
 });
