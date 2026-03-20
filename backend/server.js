@@ -8,14 +8,9 @@ const { initReminderJobs } = require('./jobs/reminderJob');
 
 const app = express();
 
-// ─── Simplified CORS Configuration ──────────────────────────────────────────
-// Allowing all origins to resolve connectivity issues immediately.
-app.use(cors({
-  origin: true, // Echoes the request origin back to the client
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
-}));
+// ─── CORS Handled by Vercel (vercel.json) ────────────────────────────────────
+// Using vercel.json headers for better reliability on serverless.
+// app.use(cors(...)); // Middleware removed to avoid conflict
 
 app.use(express.json());
 
