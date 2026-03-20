@@ -4,6 +4,12 @@ const accountSid = process.env.TWILIO_ACCOUNT_SID;
 const authToken = process.env.TWILIO_AUTH_TOKEN;
 const twilioNumber = process.env.TWILIO_PHONE_NUMBER;
 
+// If set, ALL SMS is redirected to this number (useful for Twilio trial accounts
+// which can only send to verified numbers). Remove from .env in production.
+const testNumber = process.env.TWILIO_TEST_NUMBER
+    ? process.env.TWILIO_TEST_NUMBER.replace(/\s+/g, '')
+    : null;
+
 // Only initialise the real client if real credentials exist
 let client = null;
 const hasCredentials =
@@ -17,6 +23,9 @@ if (hasCredentials) {
     try {
         client = twilio(accountSid, authToken);
         console.log('✅ Twilio client initialised successfully');
+        if (testNumber) {
+            console.log(`🔀 TWILIO_TEST_NUMBER is set → all SMS will be sent to ${testNumber}`);
+        }
     } catch (err) {
         console.warn('⚠️  Twilio client failed to initialise:', err.message);
     }
@@ -41,6 +50,8 @@ const normalisePhone = (phone) => {
 
 /**
  * Core SMS sender – all public methods delegate here.
+ * If TWILIO_TEST_NUMBER is set, the message is always delivered to that
+ * number (the real recipient is shown in the console log for reference).
  */
 const sendSMS = async (to, body) => {
     const normalisedTo = normalisePhone(to);
@@ -50,8 +61,14 @@ const sendSMS = async (to, body) => {
         return { success: false, reason: 'No phone number' };
     }
 
+    // Redirect to test number if configured (Twilio trial restriction workaround)
+    const destination = testNumber || normalisedTo;
+    if (testNumber && testNumber !== normalisedTo) {
+        console.log(`🔀 [TEST OVERRIDE] Redirecting SMS from ${normalisedTo} → ${testNumber}`);
+    }
+
     if (!client) {
-        console.log(`📱 [MOCK SMS → ${normalisedTo}]:\n  ${body}`);
+        console.log(`📱 [MOCK SMS → ${destination}]:\n  ${body}`);
         return { success: true, mock: true };
     }
 
@@ -59,12 +76,12 @@ const sendSMS = async (to, body) => {
         const message = await client.messages.create({
             body,
             from: twilioNumber,
-            to: normalisedTo,
+            to: destination,
         });
-        console.log(`✅ SMS sent to ${normalisedTo} | SID: ${message.sid}`);
+        console.log(`✅ SMS sent to ${destination} | SID: ${message.sid}`);
         return { success: true, sid: message.sid };
     } catch (err) {
-        console.error(`❌ Failed to send SMS to ${normalisedTo}:`, err.message);
+        console.error(`❌ Failed to send SMS to ${destination}:`, err.message);
         return { success: false, error: err.message };
     }
 };
