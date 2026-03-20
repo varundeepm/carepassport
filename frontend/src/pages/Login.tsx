@@ -1,59 +1,126 @@
-import React from 'react';
-import { Card, CardContent, Typography, TextField, Button, Box, Tabs, Tab } from '@mui/material';
-import bgImage from '../assets/doctor-bg.jpg';
-
-const DoctorOrgLogin: React.FC = () => (
-  <Box component="form" noValidate autoComplete="off" sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-    <TextField label="Organization/Doctor ID" variant="outlined" fullWidth required />
-    <TextField label="Password" type="password" variant="outlined" fullWidth required />
-    <Button variant="contained" color="primary" fullWidth>Login</Button>
-  </Box>
-);
-
-const PatientLogin: React.FC = () => (
-  <Box component="form" noValidate autoComplete="off" sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-    <TextField label="Patient ID" variant="outlined" fullWidth required />
-    <TextField label="Password" type="password" variant="outlined" fullWidth required />
-    <Button variant="contained" color="secondary" fullWidth>Login</Button>
-  </Box>
-);
+import React, { useState } from 'react';
+import {
+  Container,
+  Paper,
+  TextField,
+  Button,
+  Typography,
+  Box,
+  Alert,
+} from '@mui/material';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
+import doctorBg from '../assets/doctor-bg.jpg';
 
 const Login: React.FC = () => {
-  const [tab, setTab] = React.useState(0);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
-    setTab(newValue);
+  const { login } = useAuth();
+  const navigate = useNavigate();
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setLoading(true);
+
+    try {
+      await login(email, password);
+      // Wait a moment for context to update or use the role from the response
+      // For simplicity, we check local storage directly or trust the next navigation will have context
+      const savedUser = localStorage.getItem('user');
+      if (savedUser) {
+        const user = JSON.parse(savedUser);
+        if (user.role === 'doctor') {
+          navigate('/doctor/dashboard');
+        } else {
+          navigate('/patient/dashboard');
+        }
+      }
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Login failed');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <Box
-      sx={{
-        minHeight: '100vh',
-        width: '100vw',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'flex-end',
-        backgroundImage: `url(${bgImage})`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        backgroundRepeat: 'no-repeat',
-      }}
-    >
-      <Card sx={{ maxWidth: 600, width: '100%', m: 4, mr: '2cm', boxShadow: 5, backdropFilter: 'blur(2px)' }}>
-        <CardContent>
-          <Typography variant="h5" component="div" gutterBottom align="center">
-            Login
+    <Box sx={{
+      minHeight: '100vh',
+      display: 'flex',
+      alignItems: 'center',
+      backgroundImage: `linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url(${doctorBg})`,
+      backgroundSize: 'cover',
+      backgroundPosition: 'center',
+      backgroundRepeat: 'no-repeat',
+      py: 4
+    }}>
+      <Container maxWidth="sm">
+        <Paper elevation={6} sx={{ p: 4, borderRadius: 4, bgcolor: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(10px)' }}>
+          <Typography variant="h4" align="center" gutterBottom fontWeight="bold" color="primary">
+            CarePassport Login
           </Typography>
-          <Tabs value={tab} onChange={handleTabChange} variant="fullWidth" sx={{ mb: 2 }}>
-            <Tab label="Organization" />
-            <Tab label="Patient" />
-          </Tabs>
-          {tab === 0 && <DoctorOrgLogin />}
-          {tab === 1 && <PatientLogin />}
-        </CardContent>
-      </Card>
+          <Typography variant="body2" align="center" color="text.secondary" sx={{ mb: 3 }}>
+            Blockchain-Secured Medical Records
+          </Typography>
+
+          {error && (
+            <Alert severity="error" sx={{ mb: 2 }}>
+              {error}
+            </Alert>
+          )}
+
+          <form onSubmit={handleSubmit}>
+            <TextField
+              fullWidth
+              label="Email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              margin="normal"
+              required
+              sx={{ mb: 2 }}
+            />
+            <TextField
+              fullWidth
+              label="Password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              margin="normal"
+              required
+              sx={{ mb: 3 }}
+            />
+            <Button
+              fullWidth
+              type="submit"
+              variant="contained"
+              size="large"
+              disabled={loading}
+              sx={{
+                py: 1.5,
+                borderRadius: 2,
+                fontWeight: 'bold',
+                textTransform: 'none',
+                fontSize: '1.1rem'
+              }}
+            >
+              {loading ? 'Logging in...' : 'Login'}
+            </Button>
+          </form>
+
+          <Box sx={{ mt: 3, textAlign: 'center' }}>
+            <Typography variant="body2" color="text.secondary">
+              Don't have an account?{' '}
+              <Button onClick={() => navigate('/register')} sx={{ fontWeight: 'bold' }}>Register</Button>
+            </Typography>
+          </Box>
+        </Paper>
+      </Container>
     </Box>
   );
 };
 
-export default Login; 
+export default Login;

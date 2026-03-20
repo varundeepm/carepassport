@@ -1,200 +1,149 @@
-import React from 'react';
-import { 
-  Container, 
-  Typography, 
-  Box, 
-  Tabs, 
-  Tab, 
-  Card, 
-  CardContent, 
-  Grid, 
-  Button, 
-  List, 
-  ListItem, 
-  ListItemText, 
-  ListItemIcon,
-  Chip,
-  Avatar,
+import React, { useState } from 'react';
+import {
+  Box,
+  Typography,
+  Grid,
+  Card,
+  CardContent,
+  Button,
   Divider,
-  Paper,
-  Fab,
-  Modal,
-  TextField,
-  Backdrop,
-  Fade,
-  InputLabel,
-  MenuItem,
-  Select,
-  FormControl
+  Avatar,
+  Container,
+  IconButton,
+  Breadcrumbs,
+  Link
 } from '@mui/material';
 import {
+  Home as HomeIcon,
+  NavigateNext as NextIcon,
   Person as PersonIcon,
-  LocalHospital as HospitalIcon,
-  Assignment as AssignmentIcon,
-  Schedule as ScheduleIcon,
-  Notifications as NotificationsIcon,
-  TrendingUp as TrendingUpIcon,
-  People as PeopleIcon,
-  Folder as FolderIcon,
-  CalendarToday as CalendarIcon,
-  MedicalServices as MedicalIcon,
-  Add as AddIcon
+  AccountBalanceWallet as WalletIcon,
+  Refresh as RefreshIcon
 } from '@mui/icons-material';
+import { useAuth } from '../contexts/AuthContext';
+import HealthChatbot from '../components/HealthChatbot';
+import { WalletConnectButton, WalletHistory } from '../components/WalletConnect';
+import DoctorFileUpload from '../components/FileTransfer/DoctorFileUpload';
+import PatientFilesList from '../components/FileTransfer/PatientFilesList';
+import LiverCategoryList, { LIVER_CATEGORIES } from '../components/LiverCategoryList';
+import PatientCategoryTable from '../components/PatientCategoryTable';
+import LiverHealthVisualization from '../components/LiverHealthVisualization';
+import OrganizationDoctorCards from '../components/OrganizationDoctorCards';
 
-// Patient Dashboard Component
-const PatientDashboard: React.FC = () => {
-  const upcomingAppointments = [
-    { id: 1, doctor: 'Dr. Sarah Johnson', date: '2024-01-15', time: '10:00 AM', type: 'Check-up' },
-    { id: 2, doctor: 'Dr. Michael Chen', date: '2024-01-20', time: '2:30 PM', type: 'Consultation' }
-  ];
+// Main Dashboard Component
+const Dashboard: React.FC = () => {
+  const { user, userType } = useAuth();
 
-  const recentRecords = [
-    { id: 1, title: 'Blood Test Results', date: '2024-01-10', status: 'Available' },
-    { id: 2, title: 'X-Ray Report', date: '2024-01-08', status: 'Available' },
-    { id: 3, title: 'Prescription Update', date: '2024-01-05', status: 'Pending' }
-  ];
+  if (!user) {
+    return (
+      <Box sx={{ p: 5, textAlign: 'center' }}>
+        <Typography variant="h5" gutterBottom>Session Expired</Typography>
+        <Button variant="contained" href="/login" sx={{ mt: 2, borderRadius: 3 }}>
+          Return to Login
+        </Button>
+      </Box>
+    );
+  }
 
-  const visitedHospitals = [
-    { id: 1, name: 'City Hospital', lastVisit: '2024-01-10', address: '123 Main St', doctors: ['Dr. Sarah Johnson', 'Dr. Lee Wong'] },
-    { id: 2, name: 'Green Valley Clinic', lastVisit: '2023-12-22', address: '456 Oak Ave', doctors: ['Dr. Michael Chen'] },
-    { id: 3, name: 'Sunrise Medical Center', lastVisit: '2023-11-15', address: '789 Sunrise Blvd', doctors: ['Dr. Priya Patel'] }
+  return (
+    <Container maxWidth="xl" sx={{ py: 4 }}>
+      {userType === 'doctor' ? <DoctorDashboard /> : <PatientDashboard />}
+      <HealthChatbot />
+    </Container>
+  );
+};
+
+// Doctor Dashboard Component (Task 3)
+const DoctorDashboard: React.FC = () => {
+  const { user } = useAuth();
+  const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
+  const [selectedPatientId, setSelectedPatientId] = useState<string | null>(null);
+
+  // Mock data for counts and patients
+  const categoryCounts = { 1: 5, 2: 12, 3: 8, 4: 3, 5: 2, 6: 7, 7: 4, 8: 15, 9: 6, 10: 9 };
+
+  const mockPatients = [
+    {
+      id: 'p1', name: 'John Doe', age: 45, gender: 'Male',
+      riskLevel: 'high' as const, lastReportDate: '2024-02-10',
+      walletAddress: '0x742d35Cc6634C0532925a3b844Bc454e4438f44e'
+    },
+    {
+      id: 'p2', name: 'Jane Smith', age: 38, gender: 'Female',
+      riskLevel: 'low' as const, lastReportDate: '2024-02-12',
+      walletAddress: '0x123d35Cc6634C0532925a3b844Bc454e4438f44a'
+    }
   ];
 
   return (
     <Box>
-      <Typography variant="h5" gutterBottom sx={{ mb: 3 }}>
-        Patient Dashboard
-      </Typography>
-      
+      <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Box>
+          <Breadcrumbs separator={<NextIcon fontSize="small" />} sx={{ mb: 1 }}>
+            <Link underline="hover" color="inherit" onClick={() => { setSelectedCategory(null); setSelectedPatientId(null); }} sx={{ cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
+              <HomeIcon sx={{ mr: 0.5 }} fontSize="inherit" />
+              Dashboard
+            </Link>
+            {selectedCategory && (
+              <Typography color="text.primary">{LIVER_CATEGORIES[selectedCategory - 1]}</Typography>
+            )}
+          </Breadcrumbs>
+          <Typography variant="h4" fontWeight="bold">Doctor Portal</Typography>
+        </Box>
+        <Box sx={{ textAlign: 'right' }}>
+          <Typography variant="body2" color="text.secondary">Welcome back,</Typography>
+          <Typography variant="h6" color="primary" fontWeight="bold">Dr. {user?.name || 'Practitioner'}</Typography>
+        </Box>
+      </Box>
+
       <Grid container spacing={3}>
-        {/* Quick Actions */}
-        <Grid item xs={12} md={4}>
-          <Card>
+        {/* Left Sidebar - Wallet & Profile */}
+        <Grid item xs={12} md={3.5}>
+          <Card sx={{ borderRadius: 4, mb: 3 }}>
             <CardContent>
-              <Typography variant="h6" gutterBottom>
-                Quick Actions
-              </Typography>
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                <Button variant="contained" startIcon={<ScheduleIcon />}>
-                  Book Appointment
-                </Button>
-                <Button variant="outlined" startIcon={<FolderIcon />}>
-                  View Medical Records
-                </Button>
-                <Button variant="outlined" startIcon={<NotificationsIcon />}>
-                  Request Prescription
-                </Button>
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+                <Avatar sx={{ width: 60, height: 60, mr: 2, bgcolor: 'primary.main', border: '3px solid #e8eaf6' }}>
+                  <PersonIcon />
+                </Avatar>
+                <Box>
+                  <Typography variant="h6" fontWeight="bold">{user?.name}</Typography>
+                  <Typography variant="caption" color="text.secondary">{user?.specialty || 'Hepatologist'}</Typography>
+                </Box>
               </Box>
-            </CardContent>
-          </Card>
-        </Grid>
-
-        {/* Upcoming Appointments */}
-        <Grid item xs={12} md={8}>
-          <Card>
-            <CardContent>
-              <Typography variant="h6" gutterBottom>
-                Upcoming Appointments
+              <Divider sx={{ my: 2 }} />
+              <Typography variant="subtitle2" gutterBottom fontWeight="bold" sx={{ color: 'primary.main', display: 'flex', alignItems: 'center' }}>
+                <WalletIcon sx={{ mr: 1, fontSize: 18 }} /> SUI HEALTH WALLET
               </Typography>
-              <List>
-                {upcomingAppointments.map((appointment, index) => (
-                  <React.Fragment key={appointment.id}>
-                    <ListItem>
-                      <ListItemIcon>
-                        <CalendarIcon color="primary" />
-                      </ListItemIcon>
-                      <ListItemText
-                        primary={appointment.doctor}
-                        secondary={`${appointment.date} at ${appointment.time} - ${appointment.type}`}
-                      />
-                      <Chip label={appointment.type} color="primary" size="small" />
-                    </ListItem>
-                    {index < upcomingAppointments.length - 1 && <Divider />}
-                  </React.Fragment>
-                ))}
-              </List>
+              <WalletConnectButton />
+              <WalletHistory />
             </CardContent>
           </Card>
         </Grid>
 
-        {/* Recent Medical Records */}
-        <Grid item xs={12}>
-          <Card>
-            <CardContent>
-              <Typography variant="h6" gutterBottom>
-                Recent Medical Records
-              </Typography>
-              <Grid container spacing={2}>
-                {recentRecords.map((record) => (
-                  <Grid item xs={12} sm={6} md={4} key={record.id}>
-                    <Paper sx={{ p: 2, border: '1px solid #e0e0e0' }}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                        <FolderIcon color="primary" sx={{ mr: 1 }} />
-                        <Typography variant="subtitle2">{record.title}</Typography>
-                      </Box>
-                      <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                        {record.date}
-                      </Typography>
-                      <Chip 
-                        label={record.status} 
-                        color={record.status === 'Available' ? 'success' : 'warning'} 
-                        size="small" 
-                      />
-                    </Paper>
-                  </Grid>
-                ))}
-              </Grid>
-            </CardContent>
-          </Card>
-        </Grid>
-
-        {/* Visited Hospitals */}
-        <Grid item xs={12}>
-          {visitedHospitals.length === 0 ? (
-            <Card>
-              <CardContent>
-                <Typography variant="h6" gutterBottom>
-                  Visited Hospitals
-                </Typography>
-                <Typography variant="body1" color="text.secondary">
-                  No hospital visits yet. Your visits will appear here after your doctor or organization creates a patient card for you.
-                </Typography>
-              </CardContent>
-            </Card>
+        {/* Main Content Area */}
+        <Grid item xs={12} md={8.5}>
+          {!selectedCategory ? (
+            <Box>
+              <Typography variant="h6" sx={{ mb: 3, fontWeight: 'bold' }}>Patient Categories</Typography>
+              <LiverCategoryList
+                counts={categoryCounts}
+                onSelect={(id) => setSelectedCategory(id)}
+              />
+            </Box>
+          ) : !selectedPatientId ? (
+            <PatientCategoryTable
+              categoryName={LIVER_CATEGORIES[selectedCategory - 1]}
+              patients={mockPatients}
+              onViewPatient={(id) => setSelectedPatientId(id)}
+              onUploadReport={(id) => setSelectedPatientId(id)}
+            />
           ) : (
-            <Card>
-              <CardContent>
-                <Typography variant="h6" gutterBottom>
-                  Visited Hospitals
-                </Typography>
-                <Grid container spacing={2}>
-                  {visitedHospitals.map((hospital) => (
-                    <Grid item xs={12} sm={6} md={4} key={hospital.id}>
-                      <Paper sx={{ p: 2, border: '1px solid #e0e0e0' }}>
-                        <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                          <HospitalIcon color="primary" sx={{ mr: 1 }} />
-                          <Typography variant="subtitle2">{hospital.name}</Typography>
-                        </Box>
-                        <Typography variant="body2" color="text.secondary">
-                          Last visit: {hospital.lastVisit}
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                          Address: {hospital.address}
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                          Doctors seen:
-                        </Typography>
-                        <ul style={{ margin: 0, paddingLeft: '1.2em' }}>
-                          {hospital.doctors.map((doc, idx) => (
-                            <li key={idx} style={{ fontSize: '0.95em' }}>{doc}</li>
-                          ))}
-                        </ul>
-                      </Paper>
-                    </Grid>
-                  ))}
-                </Grid>
-              </CardContent>
-            </Card>
+            <Box>
+              <Box sx={{ mb: 2, display: 'flex', gap: 2 }}>
+                <Button variant="outlined" onClick={() => setSelectedPatientId(null)}>Back to List</Button>
+              </Box>
+              <DoctorFileUpload defaultRecipient={mockPatients.find(p => p.id === selectedPatientId)?.walletAddress} />
+            </Box>
           )}
         </Grid>
       </Grid>
@@ -202,289 +151,78 @@ const PatientDashboard: React.FC = () => {
   );
 };
 
-// Doctor/Organization Dashboard Component
-const DoctorOrgDashboard: React.FC = () => {
-  const [open, setOpen] = React.useState(false);
-  const [patientCards, setPatientCards] = React.useState<any[]>([]);
-  const [form, setForm] = React.useState({
-    patientId: '',
-    name: '',
-    file: null as File | null,
-    prescription: '',
-    suggestion: '',
-    appointment: '',
-    hospital: 'City Hospital',
-    date: '',
-  });
+// Patient Dashboard Component (Task 2)
+const PatientDashboard: React.FC = () => {
+  const { user } = useAuth();
 
-  const handleOpen = () => setOpen(true);
-  const handleClose = () => setOpen(false);
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+  // Mock data for visualizations
+  const mockStats = { alt: 45, ast: 38, alp: 110, bilirubin: 1.2, albumin: 4.1 };
+  const mockOrg = {
+    name: 'Apollo Liver Institute',
+    type: 'Diagnostic Center',
+    address: '123 Health Ave, Medical District',
+    imageUrl: 'https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?auto=format&fit=crop&q=80&w=400'
   };
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setForm({ ...form, file: e.target.files ? e.target.files[0] : null });
+  const mockDoctor = {
+    name: 'Dr. Sarah Johnson',
+    specialty: 'Senior Hepatologist',
+    imageUrl: 'https://images.unsplash.com/photo-1559839734-2b71ea197ec2?auto=format&fit=crop&q=80&w=200',
+    verified: true
   };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setPatientCards([...patientCards, { ...form }]);
-    setForm({ patientId: '', name: '', file: null, prescription: '', suggestion: '', appointment: '', hospital: 'City Hospital', date: '' });
-    handleClose();
-  };
-
-  const todayAppointments = [
-    { id: 1, patient: 'John Doe', time: '9:00 AM', type: 'Check-up', status: 'Confirmed' },
-    { id: 2, patient: 'Jane Smith', time: '10:30 AM', type: 'Consultation', status: 'Confirmed' },
-    { id: 3, patient: 'Mike Johnson', time: '2:00 PM', type: 'Follow-up', status: 'Pending' }
-  ];
-
-  const recentPatients = [
-    { id: 1, name: 'Alice Brown', lastVisit: '2024-01-10', status: 'Active' },
-    { id: 2, name: 'Bob Wilson', lastVisit: '2024-01-08', status: 'Active' },
-    { id: 3, name: 'Carol Davis', lastVisit: '2024-01-05', status: 'Inactive' }
-  ];
-
-  const pendingTasks = [
-    { id: 1, task: 'Review lab results', priority: 'High', dueDate: '2024-01-12' },
-    { id: 2, task: 'Update patient records', priority: 'Medium', dueDate: '2024-01-15' },
-    { id: 3, task: 'Schedule follow-up calls', priority: 'Low', dueDate: '2024-01-18' }
-  ];
 
   return (
-    <Box sx={{ position: 'relative' }}>
-      <Typography variant="h5" gutterBottom sx={{ mb: 3 }}>
-        Doctor/Organization Dashboard
-      </Typography>
-      
+    <Box>
+      <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+        <Box>
+          <Typography variant="h4" fontWeight="bold">Patient Dashboard</Typography>
+          <Typography variant="body2" color="text.secondary">Comprehensive Liver Health Tracking</Typography>
+        </Box>
+        <IconButton color="primary"><RefreshIcon /></IconButton>
+      </Box>
+
       <Grid container spacing={3}>
-        {/* Quick Stats */}
-        <Grid item xs={12} md={3}>
-          <Card>
+        {/* Left Column - Health Profile & Wallet */}
+        <Grid item xs={12} md={4}>
+          <Card sx={{ borderRadius: 4, mb: 3 }}>
             <CardContent>
-              <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                <PeopleIcon color="primary" sx={{ fontSize: 40, mr: 2 }} />
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+                <Avatar sx={{ width: 64, height: 64, mr: 2, bgcolor: 'secondary.main' }}>
+                  <PersonIcon />
+                </Avatar>
                 <Box>
-                  <Typography variant="h4">24</Typography>
-                  <Typography variant="body2" color="text.secondary">Total Patients</Typography>
+                  <Typography variant="h6" fontWeight="bold">{user?.name}</Typography>
+                  <Typography variant="caption" color="text.secondary">ID: {user?.id || 'PAT-9021'}</Typography>
                 </Box>
               </Box>
-            </CardContent>
-          </Card>
-        </Grid>
-
-        <Grid item xs={12} md={3}>
-          <Card>
-            <CardContent>
-              <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                <CalendarIcon color="primary" sx={{ fontSize: 40, mr: 2 }} />
-                <Box>
-                  <Typography variant="h4">8</Typography>
-                  <Typography variant="body2" color="text.secondary">Today's Appointments</Typography>
-                </Box>
-              </Box>
-            </CardContent>
-          </Card>
-        </Grid>
-
-        <Grid item xs={12} md={3}>
-          <Card>
-            <CardContent>
-              <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                <AssignmentIcon color="primary" sx={{ fontSize: 40, mr: 2 }} />
-                <Box>
-                  <Typography variant="h4">12</Typography>
-                  <Typography variant="body2" color="text.secondary">Pending Tasks</Typography>
-                </Box>
-              </Box>
-            </CardContent>
-          </Card>
-        </Grid>
-
-        <Grid item xs={12} md={3}>
-          <Card>
-            <CardContent>
-              <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                <TrendingUpIcon color="primary" sx={{ fontSize: 40, mr: 2 }} />
-                <Box>
-                  <Typography variant="h4">85%</Typography>
-                  <Typography variant="body2" color="text.secondary">Satisfaction Rate</Typography>
-                </Box>
-              </Box>
-            </CardContent>
-          </Card>
-        </Grid>
-
-        {/* Today's Appointments */}
-        <Grid item xs={12} md={6}>
-          <Card>
-            <CardContent>
-              <Typography variant="h6" gutterBottom>
-                Today's Appointments
+              <Divider sx={{ my: 2 }} />
+              <Typography variant="subtitle2" gutterBottom fontWeight="bold" sx={{ color: 'primary.main', display: 'flex', alignItems: 'center' }}>
+                <WalletIcon sx={{ mr: 1, fontSize: 18 }} /> SUI HEALTH WALLET
               </Typography>
-              <List>
-                {todayAppointments.map((appointment, index) => (
-                  <React.Fragment key={appointment.id}>
-                    <ListItem>
-                      <ListItemIcon>
-                        <Avatar sx={{ bgcolor: 'primary.main' }}>
-                          <PersonIcon />
-                        </Avatar>
-                      </ListItemIcon>
-                      <ListItemText
-                        primary={appointment.patient}
-                        secondary={`${appointment.time} - ${appointment.type}`}
-                      />
-                      <Chip 
-                        label={appointment.status} 
-                        color={appointment.status === 'Confirmed' ? 'success' : 'warning'} 
-                        size="small" 
-                      />
-                    </ListItem>
-                    {index < todayAppointments.length - 1 && <Divider />}
-                  </React.Fragment>
-                ))}
-              </List>
+              <WalletConnectButton />
+              <WalletHistory />
             </CardContent>
           </Card>
+
+          {/* Org & Doctor Cards (Task 2) */}
+          <OrganizationDoctorCards
+            organization={mockOrg}
+            doctor={mockDoctor}
+          />
         </Grid>
 
-        {/* Pending Tasks */}
-        <Grid item xs={12} md={6}>
-          <Card>
-            <CardContent>
-              <Typography variant="h6" gutterBottom>
-                Pending Tasks
-              </Typography>
-              <List>
-                {pendingTasks.map((task, index) => (
-                  <React.Fragment key={task.id}>
-                    <ListItem>
-                      <ListItemIcon>
-                        <AssignmentIcon color="primary" />
-                      </ListItemIcon>
-                      <ListItemText
-                        primary={task.task}
-                        secondary={`Due: ${task.dueDate}`}
-                      />
-                      <Chip 
-                        label={task.priority} 
-                        color={task.priority === 'High' ? 'error' : task.priority === 'Medium' ? 'warning' : 'default'} 
-                        size="small" 
-                      />
-                    </ListItem>
-                    {index < pendingTasks.length - 1 && <Divider />}
-                  </React.Fragment>
-                ))}
-              </List>
-            </CardContent>
-          </Card>
-        </Grid>
+        {/* Right Column - Visualizations & Reports */}
+        <Grid item xs={12} md={8}>
+          {/* Health Visualizations (Task 1 & 2) */}
+          <Box sx={{ mb: 3 }}>
+            <LiverHealthVisualization stats={mockStats} riskLevel="low" />
+          </Box>
 
-        {/* Recent Patients */}
-        <Grid item xs={12}>
-          <Card>
-            <CardContent>
-              <Typography variant="h6" gutterBottom>
-                Recent Patients
-              </Typography>
-              <Grid container spacing={2}>
-                {recentPatients.map((patient) => (
-                  <Grid item xs={12} sm={6} md={4} key={patient.id}>
-                    <Paper sx={{ p: 2, border: '1px solid #e0e0e0' }}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                        <Avatar sx={{ mr: 2 }}>
-                          <PersonIcon />
-                        </Avatar>
-                        <Box>
-                          <Typography variant="subtitle2">{patient.name}</Typography>
-                          <Typography variant="body2" color="text.secondary">
-                            Last visit: {patient.lastVisit}
-                          </Typography>
-                        </Box>
-                      </Box>
-                      <Chip 
-                        label={patient.status} 
-                        color={patient.status === 'Active' ? 'success' : 'default'} 
-                        size="small" 
-                      />
-                    </Paper>
-                  </Grid>
-                ))}
-              </Grid>
-            </CardContent>
-          </Card>
+          {/* Blockchain Files (Task 3) */}
+          <PatientFilesList />
         </Grid>
       </Grid>
-      {/* Floating Action Button */}
-      <Fab color="primary" aria-label="add" onClick={handleOpen} sx={{ position: 'fixed', bottom: 32, right: 32, zIndex: 1000 }}>
-        <AddIcon />
-      </Fab>
-      {/* Modal for Patient Card Creation */}
-      <Modal
-        open={open}
-        onClose={handleClose}
-        closeAfterTransition
-        BackdropComponent={Backdrop}
-        BackdropProps={{ timeout: 500 }}
-      >
-        <Fade in={open}>
-          <Box component="form" onSubmit={handleSubmit} sx={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: 400, bgcolor: 'background.paper', borderRadius: 2, boxShadow: 24, p: 4, display: 'flex', flexDirection: 'column', gap: 2 }}>
-            <Typography variant="h6" align="center">Create Patient Card</Typography>
-            <TextField label="Patient ID" name="patientId" value={form.patientId} onChange={handleChange} required fullWidth />
-            <TextField label="Patient Name" name="name" value={form.name} onChange={handleChange} required fullWidth />
-            <TextField label="Appointment Details" name="appointment" value={form.appointment} onChange={handleChange} required fullWidth />
-            <TextField label="Prescription" name="prescription" value={form.prescription} onChange={handleChange} multiline rows={2} fullWidth />
-            <TextField label="Suggestion" name="suggestion" value={form.suggestion} onChange={handleChange} multiline rows={2} fullWidth />
-            <TextField label="Date" name="date" type="date" value={form.date} onChange={handleChange} InputLabelProps={{ shrink: true }} required fullWidth />
-            <FormControl fullWidth>
-              <InputLabel>Hospital/Organization</InputLabel>
-              <Select name="hospital" value={form.hospital} label="Hospital/Organization" onChange={e => setForm({ ...form, hospital: e.target.value })}>
-                <MenuItem value="City Hospital">City Hospital</MenuItem>
-                <MenuItem value="Green Valley Clinic">Green Valley Clinic</MenuItem>
-                <MenuItem value="Sunrise Medical Center">Sunrise Medical Center</MenuItem>
-              </Select>
-            </FormControl>
-            <Button variant="outlined" component="label">
-              Upload File
-              <input type="file" hidden onChange={handleFileChange} />
-            </Button>
-            {form.file && <Typography variant="body2">Selected: {form.file.name}</Typography>}
-            <Button type="submit" variant="contained" color="primary">Create</Button>
-          </Box>
-        </Fade>
-      </Modal>
     </Box>
   );
 };
 
-// Main Dashboard Component with Tabs
-const Dashboard: React.FC = () => {
-  const [tab, setTab] = React.useState(0);
-
-  const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
-    setTab(newValue);
-  };
-
-  return (
-    <Container maxWidth="lg">
-      <Box sx={{ mt: 4 }}>
-        <Typography variant="h4" gutterBottom>
-          CarePassport Dashboard
-        </Typography>
-        
-        <Tabs value={tab} onChange={handleTabChange} variant="fullWidth" sx={{ mb: 3 }}>
-          <Tab label="Patient View" icon={<PersonIcon />} iconPosition="start" />
-          <Tab label="Doctor/Organization View" icon={<HospitalIcon />} iconPosition="start" />
-        </Tabs>
-        
-        {tab === 0 && <PatientDashboard />}
-        {tab === 1 && <DoctorOrgDashboard />}
-      </Box>
-    </Container>
-  );
-};
-
-export default Dashboard; 
+export default Dashboard;
