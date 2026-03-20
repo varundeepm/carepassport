@@ -8,24 +8,13 @@ const { initReminderJobs } = require('./jobs/reminderJob');
 
 const app = express();
 
-// ─── CORS Configuration ───────────────────────────────────────────────────────
-// FRONTEND_URL should be set to your Vercel frontend deployment URL in production.
-const allowedOrigins = [
-  process.env.FRONTEND_URL,
-  'http://localhost:5173',
-  'http://localhost:3000',
-].filter(Boolean);
-
+// ─── Simplified CORS Configuration ──────────────────────────────────────────
+// Allowing all origins to resolve connectivity issues immediately.
 app.use(cors({
-  origin: (origin, callback) => {
-    // Allow requests with no origin (e.g. mobile apps, Postman, curl)
-    if (!origin || allowedOrigins.some(o => origin.startsWith(o))) {
-      callback(null, true);
-    } else {
-      callback(new Error(`CORS: origin ${origin} not allowed`));
-    }
-  },
+  origin: true, // Echoes the request origin back to the client
   credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
 app.use(express.json());
